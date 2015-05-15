@@ -16,7 +16,11 @@ namespace MvcTagHelpersWebSite.Components
         {
             IExpirationTrigger trigger;
             var products = ProductsService.GetProducts(category, out trigger);
-            EntryLinkHelpers.ContextLink.AddExpirationTriggers(new[] { trigger });
+
+            if (EntryLinkHelpers.ContextLink != null)
+            {
+                EntryLinkHelpers.ContextLink.AddExpirationTriggers(new[] { trigger });
+            }
 
             ViewData["Products"] = products;
             return View();

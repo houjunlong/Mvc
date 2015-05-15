@@ -45,7 +45,7 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
                                IFileProvider fileProvider)
         {
             _fileProvider = fileProvider;
-            _cache = new MemoryCache(new MemoryCacheOptions { ListenForMemoryPressure = false });
+            _cache = new MemoryCache(new MemoryCacheOptions { CompactOnMemoryPressure = false });
 
             var cacheEntries = new List<CompilerCacheEntry>();
             foreach (var viewCollection in razorFileInfoCollections)
@@ -58,7 +58,8 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
 
                     // There shouldn't be any duplicates and if there are any the first will win.
                     // If the result doesn't match the one on disk its going to recompile anyways.
-                    _cache.Set(NormalizePath(fileInfo.RelativePath), cacheEntry, PopulateCacheSetContext);
+                    var key = NormalizePath(fileInfo.RelativePath);
+                    _cache.Set(key, cacheEntry, GetCacheEntryOptions(key, cacheEntry));
 
                     cacheEntries.Add(cacheEntry);
                 }
@@ -184,9 +185,10 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
             var compilationResult = compile(file).EnsureSuccessful();
 
             // Concurrent addition to MemoryCache with the same key result in safe race.
-            var cacheEntry = _cache.Set(normalizedPath,
-                                        new CompilerCacheEntry(file, compilationResult.CompiledType),
-                                        PopulateCacheSetContext);
+            var compilerCacheEntry = new CompilerCacheEntry(file, compilationResult.CompiledType);
+            var cacheEntry = _cache.Set<CompilerCacheEntry>(normalizedPath,
+                                        compilerCacheEntry,
+                                        GetCacheEntryOptions(normalizedPath, compilerCacheEntry));
             return new GetOrAddResult
             {
                 CompilationResult = compilationResult,
@@ -194,18 +196,17 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
             };
         }
 
-        private CompilerCacheEntry PopulateCacheSetContext(ICacheSetContext cacheSetContext)
+        private CacheEntryOptions GetCacheEntryOptions(string key, CompilerCacheEntry compilerCacheEntry)
         {
-            var entry = (CompilerCacheEntry)cacheSetContext.State;
-            cacheSetContext.AddExpirationTrigger(_fileProvider.Watch(entry.RelativePath));
+            var options = new CacheEntryOptions();
+            options.AddExpirationTrigger(_fileProvider.Watch(compilerCacheEntry.RelativePath));
 
-            var globalImportPaths = ViewHierarchyUtility.GetGlobalImportLocations(cacheSetContext.Key);
+            var globalImportPaths = ViewHierarchyUtility.GetGlobalImportLocations(key);
             foreach (var location in globalImportPaths)
             {
-                cacheSetContext.AddExpirationTrigger(_fileProvider.Watch(location));
+                options.AddExpirationTrigger(_fileProvider.Watch(location));
             }
-
-            return entry;
+            return options;
         }
 
         private bool AssociatedGlobalFilesChanged(CompilerCacheEntry entry,
