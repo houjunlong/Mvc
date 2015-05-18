@@ -180,7 +180,6 @@ namespace Microsoft.AspNet.Mvc.TagHelpers.Internal
                     // Only extension differs so just compare the extension
                     var xExt = xExtIndex >= 0 ? x.Substring(xExtIndex) : string.Empty;
                     var yExt = yExtIndex >= 0 ? y.Substring(yExtIndex) : string.Empty;
-
                     return string.Compare(xExt, yExt, StringComparison.Ordinal);
                 }
 

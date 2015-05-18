@@ -488,8 +488,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
         {
             // Arrange
             var expiresAfter = TimeSpan.FromSeconds(42);
-            var clock = new TestClock();
-            var cache = new MemoryCache(new MemoryCacheOptions() { Clock = clock  });
+            var cache = new MemoryCache(new MemoryCacheOptions());
             var cacheTagHelper = new CacheTagHelper
             {
                 MemoryCache = cache,
@@ -814,21 +813,6 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 var contentBytes = Encoding.UTF8.GetBytes(input);
                 var hashedBytes = sha.ComputeHash(contentBytes);
                 return Convert.ToBase64String(hashedBytes);
-            }
-        }
-
-        private class TestClock : ISystemClock
-        {
-            public TestClock()
-            {
-                UtcNow = new DateTime(2013, 6, 15, 12, 34, 56, 789);
-            }
-
-            public DateTimeOffset UtcNow { get; set; }
-
-            public void Add(TimeSpan timeSpan)
-            {
-                UtcNow = UtcNow + timeSpan;
             }
         }
     }
