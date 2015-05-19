@@ -120,22 +120,20 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
         /// <inheritdoc />
         public override async Task ProcessAsync(TagHelperContext context, TagHelperOutput output)
         {
-            //Enabled = false;
             TagHelperContent result = null;
             if (Enabled)
             {
                 var key = GenerateKey(context);
                 if (!MemoryCache.TryGetValue(key, out result))
                 {
-                    // Create an EntryLink and flow it so that it is accessible via the ambient
-                    // EntryLinkHelpers.ContextLink for user code.
+                    // Create an entry link scope and flow it so that any triggers related to the cache entries
+                    // created within this scope get copied to this scope.
                     using (var link = MemoryCache.CreateLinkingScope())
                     {
                         result = await context.GetChildContentAsync();
 
-                        MemoryCache.Set(key, result, GetCacheEntryOptions(link));
+                        MemoryCache.Set(key, result, GetMemoryCacheEntryOptions(link));
                     }
-
                 }
             }
 
@@ -194,9 +192,9 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
         }
 
         // Internal for unit testing
-        internal CacheEntryOptions GetCacheEntryOptions(IEntryLink entryLink)
+        internal MemoryCacheEntryOptions GetMemoryCacheEntryOptions(IEntryLink entryLink)
         {
-            var options = new CacheEntryOptions();
+            var options = new MemoryCacheEntryOptions();
             if (ExpiresOn != null)
             {
                 options.SetAbsoluteExpiration(ExpiresOn.Value);

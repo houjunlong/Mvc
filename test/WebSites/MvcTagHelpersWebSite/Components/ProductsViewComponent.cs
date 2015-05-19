@@ -12,14 +12,17 @@ namespace MvcTagHelpersWebSite.Components
         [Activate]
         public ProductsService ProductsService { get; set; }
 
+        [Activate]
+        public IMemoryCache Cache { get; set; }
+
         public IViewComponentResult Invoke(string category)
         {
-            IExpirationTrigger trigger;
-            var products = ProductsService.GetProducts(category, out trigger);
-
-            if (EntryLinkHelpers.ContextLink != null)
+            string products;
+            if (!Cache.TryGetValue(category, out products))
             {
-                EntryLinkHelpers.ContextLink.AddExpirationTriggers(new[] { trigger });
+                IExpirationTrigger trigger;
+                products = ProductsService.GetProducts(category, out trigger);
+                Cache.Set(category, products, new MemoryCacheEntryOptions().AddExpirationTrigger(trigger));
             }
 
             ViewData["Products"] = products;

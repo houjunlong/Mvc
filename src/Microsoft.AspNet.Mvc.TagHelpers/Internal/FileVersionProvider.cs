@@ -72,7 +72,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers.Internal
                 _cache.Set(
                     path,
                     value,
-                    new CacheEntryOptions().AddExpirationTrigger(_fileProvider.Watch(resolvedPath)));
+                    new MemoryCacheEntryOptions().AddExpirationTrigger(_fileProvider.Watch(resolvedPath)));
             }
 
             return value;

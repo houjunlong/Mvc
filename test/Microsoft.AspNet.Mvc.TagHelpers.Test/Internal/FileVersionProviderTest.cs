@@ -146,7 +146,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers.Internal
             cache.Setup(c => c.Set(
                 /*key*/ filePath,
                 /*value*/ It.IsAny<object>(),
-                /*options*/ It.IsAny<CacheEntryOptions>()))
+                /*options*/ It.IsAny<MemoryCacheEntryOptions>()))
                 .Returns(new object())
                 .Verifiable();
             var fileVersionProvider = new FileVersionProvider(
@@ -210,7 +210,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers.Internal
                     c => c.Set(
                         /*key*/ It.IsAny<string>(),
                         /*value*/ It.IsAny<object>(),
-                        /*options*/ It.IsAny<CacheEntryOptions>()))
+                        /*options*/ It.IsAny<MemoryCacheEntryOptions>()))
                 .Returns(new object());
             return cache.Object;
         }

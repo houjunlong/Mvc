@@ -266,7 +266,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                     c => c.Set(
                         /*key*/ It.IsAny<string>(),
                         /*value*/ It.IsAny<object>(),
-                        /*options*/ It.IsAny<CacheEntryOptions>()))
+                        /*options*/ It.IsAny<MemoryCacheEntryOptions>()))
                 .Returns(new object());
             return cache.Object;
         }

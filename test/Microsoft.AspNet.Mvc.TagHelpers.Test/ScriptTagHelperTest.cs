@@ -845,7 +845,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             cache.Setup(c => c.TryGetValue(It.IsAny<string>(), out result))
                 .Returns(result != null);
 
-            var cacheEntryOptions = new CacheEntryOptions();
+            var cacheEntryOptions = new MemoryCacheEntryOptions();
             cacheEntryOptions.AddExpirationTrigger(new Mock<IExpirationTrigger>().Object);
             cache
                 .Setup(

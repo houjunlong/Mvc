@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -17,7 +17,7 @@ using Microsoft.AspNet.Razor.Runtime.TagHelpers;
 using Microsoft.AspNet.Routing;
 using Microsoft.Framework.Caching;
 using Microsoft.Framework.Caching.Memory;
-using Microsoft.Framework.Caching.Memory.Infrastructure;
+using Microsoft.Framework.Internal;
 using Moq;
 using Xunit;
 
@@ -248,8 +248,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             var value = new DefaultTagHelperContent().SetContent("ok");
             cache.Setup(c => c.Set(
                 /*key*/ It.IsAny<string>(),
-                /*value*/ It.IsAny<object>(),
-                /*optons*/ It.IsAny<CacheEntryOptions>()))
+                /*value*/ value,
+                /*optons*/ It.IsAny<MemoryCacheEntryOptions>()))
                 .Returns(value)
                 .Verifiable();
             object cacheResult;
@@ -272,7 +272,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             cache.Verify(c => c.Set(
                 /*key*/ It.IsAny<string>(),
                 /*value*/ It.IsAny<object>(),
-                /*options*/ It.IsAny<CacheEntryOptions>()),
+                /*options*/ It.IsAny<MemoryCacheEntryOptions>()),
                 Times.Never);
         }
 
@@ -289,7 +289,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             cache.Setup(c => c.Set(
                 /*key*/ It.IsAny<string>(),
                 /*value*/ value,
-                /*options*/ It.IsAny<CacheEntryOptions>()))
+                /*options*/ It.IsAny<MemoryCacheEntryOptions>()))
                 .Returns(value)
                 .Verifiable();
             object cacheResult;
@@ -314,8 +314,8 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             Assert.Equal(childContent, tagHelperOutput.Content.GetContent());
             cache.Verify(c => c.Set(
                 /*key*/ It.IsAny<string>(),
-                /*value*/ It.IsAny<object>(),
-                /*options*/ It.IsAny<CacheEntryOptions>()),
+                /*value*/ value,
+                /*options*/ It.IsAny<MemoryCacheEntryOptions>()),
                 Times.Once);
         }
 
@@ -433,7 +433,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             };
 
             // Act
-            var cacheEntryOptions = cacheTagHelper.GetCacheEntryOptions(new EntryLink());
+            var cacheEntryOptions = cacheTagHelper.GetMemoryCacheEntryOptions(new EntryLink());
 
             // Assert
             Assert.Equal(expiresOn, cacheEntryOptions.AbsoluteExpiration);
@@ -454,7 +454,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             entryLink.SetAbsoluteExpiration(expiresOn);
 
             // Act
-            var cacheEntryOptions = cacheTagHelper.GetCacheEntryOptions(entryLink);
+            var cacheEntryOptions = cacheTagHelper.GetMemoryCacheEntryOptions(entryLink);
 
             // Assert
             Assert.Equal(expiresOn, cacheEntryOptions.AbsoluteExpiration);
@@ -477,7 +477,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             entryLink.SetAbsoluteExpiration(expiresOn2);
 
             // Act
-            var cacheEntryOptions = cacheTagHelper.GetCacheEntryOptions(entryLink);
+            var cacheEntryOptions = cacheTagHelper.GetMemoryCacheEntryOptions(entryLink);
 
             // Assert
             Assert.Equal(expiresOn2, cacheEntryOptions.AbsoluteExpiration);
@@ -496,7 +496,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             };
 
             // Act
-            var cacheEntryOptions = cacheTagHelper.GetCacheEntryOptions(new EntryLink());
+            var cacheEntryOptions = cacheTagHelper.GetMemoryCacheEntryOptions(new EntryLink());
 
             // Assert
             Assert.Equal(expiresAfter, cacheEntryOptions.AbsoluteExpirationRelativeToNow);
@@ -515,7 +515,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             };
 
             // Act
-            var cacheEntryOptions = cacheTagHelper.GetCacheEntryOptions(new EntryLink());
+            var cacheEntryOptions = cacheTagHelper.GetMemoryCacheEntryOptions(new EntryLink());
 
             // Assert
             Assert.Equal(expiresSliding, cacheEntryOptions.SlidingExpiration);
@@ -534,7 +534,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             };
 
             // Act
-            var cacheEntryOptions = cacheTagHelper.GetCacheEntryOptions(new EntryLink());
+            var cacheEntryOptions = cacheTagHelper.GetMemoryCacheEntryOptions(new EntryLink());
 
             // Assert
             Assert.Equal(priority, cacheEntryOptions.Priority);
@@ -557,7 +557,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
             entryLink.AddExpirationTriggers(expected);
 
             // Act
-            var cacheEntryOptions = cacheTagHelper.GetCacheEntryOptions(entryLink);
+            var cacheEntryOptions = cacheTagHelper.GetMemoryCacheEntryOptions(entryLink);
 
             // Assert
             Assert.Equal(expected, cacheEntryOptions.Triggers.ToArray());
@@ -743,13 +743,18 @@ namespace Microsoft.AspNet.Mvc.TagHelpers
                 uniqueId: id,
                 getChildContentAsync: () =>
                 {
-                    var entryLink = EntryLinkHelpers.ContextLink;
-                    Assert.NotNull(entryLink);
-                    entryLink.AddExpirationTriggers(new[]
+                    TagHelperContent tagHelperContent;
+                    if(!cache.TryGetValue("key1", out tagHelperContent))
                     {
-                        new CancellationTokenTrigger(tokenSource.Token)
-                    });
-                    return Task.FromResult<TagHelperContent>(expectedContent);
+                        tagHelperContent = expectedContent;
+                        cache.Set(
+                            "key1",
+                            tagHelperContent,
+                            new MemoryCacheEntryOptions()
+                            .AddExpirationTrigger(new CancellationTokenTrigger(tokenSource.Token)));
+                    }
+
+                    return Task.FromResult(tagHelperContent);
                 });
             var tagHelperOutput = new TagHelperOutput("cache", new TagHelperAttributeList { { "attr", "value" } });
             tagHelperOutput.PreContent.SetContent("<cache>");

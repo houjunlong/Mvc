@@ -96,7 +96,10 @@ namespace Microsoft.AspNet.Mvc.Razor.Precompilation
                 if(!PreCompilationCache.TryGetValue(file.RelativePath, out cacheEntry))
                 {
                     cacheEntry = GetCacheEntry(file);
-                    PreCompilationCache.Set(file.RelativePath, cacheEntry, GetCacheEntryOptions(file, cacheEntry));
+                    PreCompilationCache.Set(
+                        file.RelativePath,
+                        cacheEntry,
+                        GetMemoryCacheEntryOptions(file, cacheEntry));
                 }
 
                 if (cacheEntry != null)
@@ -195,11 +198,11 @@ namespace Microsoft.AspNet.Mvc.Razor.Precompilation
             };
         }
 
-        private CacheEntryOptions GetCacheEntryOptions(
+        private MemoryCacheEntryOptions GetMemoryCacheEntryOptions(
             RelativeFileInfo fileInfo,
             PrecompilationCacheEntry cacheEntry)
         {
-            var options = new CacheEntryOptions();
+            var options = new MemoryCacheEntryOptions();
             options.AddExpirationTrigger(FileProvider.Watch(fileInfo.RelativePath));
             foreach (var path in ViewHierarchyUtility.GetGlobalImportLocations(fileInfo.RelativePath))
             {

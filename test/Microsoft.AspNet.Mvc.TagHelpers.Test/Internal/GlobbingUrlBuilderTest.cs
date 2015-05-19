@@ -277,11 +277,10 @@ namespace Microsoft.AspNet.Mvc.TagHelpers.Internal
             var fileProvider = MakeFileProvider(MakeDirectoryContents("site.css", "blank.css"));
             Mock.Get(fileProvider).Setup(f => f.Watch(It.IsAny<string>())).Returns(trigger.Object);
             var cache = MakeCache();
-            var cacheSetContext = new CacheEntryOptions();
             Mock.Get(cache).Setup(c => c.Set(
                 /*key*/ It.IsAny<string>(),
                 /*value*/ It.IsAny<object>(),
-                /*options*/ It.IsAny<CacheEntryOptions>()))
+                /*options*/ It.IsAny<MemoryCacheEntryOptions>()))
                 .Returns(new object())
                 .Verifiable();
             var requestPathBase = PathString.Empty;

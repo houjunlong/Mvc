@@ -104,7 +104,7 @@ namespace Microsoft.AspNet.Mvc.TagHelpers.Internal
                 IEnumerable<string> files;
                 if (!Cache.TryGetValue(cacheKey, out files))
                 {
-                    var options = new CacheEntryOptions();
+                    var options = new MemoryCacheEntryOptions();
                     foreach (var pattern in includePatterns)
                     {
                         var trigger = FileProvider.Watch(pattern);

@@ -44,13 +44,13 @@ namespace Microsoft.AspNet.Mvc.Razor.Directives
                                  [NotNull] Func<IFileInfo, CodeTree> getCodeTree)
         {
             CodeTree codeTree;
-            if(!_codeTreeCache.TryGetValue(pagePath, out codeTree))
+            if (!_codeTreeCache.TryGetValue(pagePath, out codeTree))
             {
                 // GetOrAdd is invoked for each _ViewStart that might potentially exist in the path.
                 // We can avoid performing file system lookups for files that do not exist by caching
                 // negative results and adding a Watch for that file.
 
-                var options = new CacheEntryOptions()
+                var options = new MemoryCacheEntryOptions()
                     .AddExpirationTrigger(_fileProvider.Watch(pagePath))
                     .SetSlidingExpiration(SlidingExpirationDuration);
 

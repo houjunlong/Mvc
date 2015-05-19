@@ -58,8 +58,11 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
 
                     // There shouldn't be any duplicates and if there are any the first will win.
                     // If the result doesn't match the one on disk its going to recompile anyways.
-                    var key = NormalizePath(fileInfo.RelativePath);
-                    _cache.Set(key, cacheEntry, GetCacheEntryOptions(key, cacheEntry));
+                    var normalizedPath = NormalizePath(fileInfo.RelativePath);
+                    _cache.Set(
+                        normalizedPath,
+                        cacheEntry,
+                        GetMemoryCacheEntryOptions(normalizedPath, fileInfo.RelativePath));
 
                     cacheEntries.Add(cacheEntry);
                 }
@@ -186,9 +189,11 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
 
             // Concurrent addition to MemoryCache with the same key result in safe race.
             var compilerCacheEntry = new CompilerCacheEntry(file, compilationResult.CompiledType);
-            var cacheEntry = _cache.Set<CompilerCacheEntry>(normalizedPath,
-                                        compilerCacheEntry,
-                                        GetCacheEntryOptions(normalizedPath, compilerCacheEntry));
+            var cacheEntry = _cache.Set<CompilerCacheEntry>(
+                normalizedPath,
+                compilerCacheEntry,
+                GetMemoryCacheEntryOptions(normalizedPath, compilerCacheEntry.RelativePath));
+
             return new GetOrAddResult
             {
                 CompilationResult = compilationResult,
@@ -196,12 +201,12 @@ namespace Microsoft.AspNet.Mvc.Razor.Compilation
             };
         }
 
-        private CacheEntryOptions GetCacheEntryOptions(string key, CompilerCacheEntry compilerCacheEntry)
+        private MemoryCacheEntryOptions GetMemoryCacheEntryOptions(string normalizedPath, string relativePath)
         {
-            var options = new CacheEntryOptions();
-            options.AddExpirationTrigger(_fileProvider.Watch(compilerCacheEntry.RelativePath));
+            var options = new MemoryCacheEntryOptions();
+            options.AddExpirationTrigger(_fileProvider.Watch(relativePath));
 
-            var globalImportPaths = ViewHierarchyUtility.GetGlobalImportLocations(key);
+            var globalImportPaths = ViewHierarchyUtility.GetGlobalImportLocations(normalizedPath);
             foreach (var location in globalImportPaths)
             {
                 options.AddExpirationTrigger(_fileProvider.Watch(location));
